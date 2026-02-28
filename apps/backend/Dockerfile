@@ -24,8 +24,8 @@ RUN pnpm --filter @taskflow/backend build
 # Generate Prisma client
 RUN pnpm --filter @taskflow/backend db:generate
 
-# -- Product image
-FROM node:20-alpine AS base
+# ── Production image ──────────────────────────────────────────
+FROM node:20-alpine AS production
 RUN npm install -g pnpm
 
 WORKDIR /app
@@ -34,7 +34,8 @@ COPY package.json pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/backend/package.json ./apps/backend/
 
-RUN pnpm install --frozen-lockefile --prod
+RUN pnpm install --frozen-lockfile --prod
+
 COPY --from=base /app/packages/shared/dist ./packages/shared/dist
 COPY --from=base /app/apps/backend/dist ./apps/backend/dist
 COPY --from=base /app/apps/backend/prisma ./apps/backend/prisma
