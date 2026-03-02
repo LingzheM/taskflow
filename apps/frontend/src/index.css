@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color tokens */
+    --color-bg: #f8f7f4;
+    --color-surface: #ffffff;
+    --color-surface-raised: #f2f0ec;
+    --color-border: #e4e1db;
+    --color-border-strong: #ccc8c0;
+
+    --color-text-primary: #1a1916;
+    --color-text-secondary: #6b6860;
+    --color-text-muted: #9c9890;
+
+    --color-accent: #2563eb;
+    --color-accent-hover: #1d4ed8;
+    --color-accent-light: #dbeafe;
+
+    --color-danger: #dc2626;
+    --color-danger-light: #fee2e2;
+    --color-success: #16a34a;
+    --color-success-light: #dcfce7;
+
+    --color-column-bg: #f2f0ec;
+    --color-card-bg: #ffffff;
+
+    /* Spacing / radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+
+    /* Shadows */
+    --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.06), 0 1px 3px 0 rgb(0 0 0 / 0.04);
+    --shadow-card-hover: 0 4px 12px 0 rgb(0 0 0 / 0.08), 0 2px 4px 0 rgb(0 0 0 / 0.04);
+    --shadow-modal: 0 20px 60px -10px rgb(0 0 0 / 0.2), 0 8px 24px -4px rgb(0 0 0 / 0.12);
+    --shadow-dropdown: 0 8px 24px -4px rgb(0 0 0 / 0.12), 0 2px 6px -2px rgb(0 0 0 / 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  code, pre, kbd {
+    font-family: 'DM Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 99px;
+  }
+
+  /* Card drag states */
+  .card-dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+  .card-drag-overlay {
+    box-shadow: var(--shadow-modal);
+    transform: rotate(2deg) scale(1.02);
+    cursor: grabbing;
+  }
+
+  /* Column drop target */
+  .column-drop-active {
+    background: var(--color-accent-light);
+    border-color: var(--color-accent);
+  }
+
+  /* Fade in animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+
+  /* Shimmer for skeleton loading */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-border) 25%,
+      var(--color-surface-raised) 50%,
+      var(--color-border) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+}

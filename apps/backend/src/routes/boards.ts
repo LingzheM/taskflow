@@ -47,3 +47,52 @@ boardRouter.get('/', async (c) => {
         return internalError(c);
     }
 })
+
+// POST /api/boards
+boardRouter.post('/', async (c) => {
+    const userId = c.get('userId');
+    const body = await c.req.json().catch(() => null);
+    if (!body) return validationError(c, { body: ['Invalid JSON'] });
+
+    const result = createBoardSchema.safeParse(body);
+    if (!result.success) {
+        return validationError(c, Object.fromEntries(
+            Object.entries(result.error.flatten().fieldErrors).map(([k,v]) => [k, v ?? []]),
+        ));
+    }
+
+    const { name } = result.data;
+    const [ pos1, pos2, pos3 ] = generateInitialPositions(3);
+
+    try {
+        const board = await prisma.board.create({
+            data: {
+                name,
+                ownerId: userId,
+                members: {
+                    create: [{ userId, role: 'owner' }],
+                },
+                columns: {
+                    create: [
+                        { name: 'To Do', position: pos1 },
+                        { name: 'In Progress', position: pos2 },
+                        { name: 'Done', position: pos3 },
+                    ],
+                },
+            },
+            include: {
+                columns: { orderBy: { position: 'desc' } },
+                members: {
+                    include: { user: { select: { id: true, name: true, email: true } } },
+                },
+            },
+        });
+
+        await logActivity(board.id, userId, 'BOARD_CREATED', { boardName: name });
+
+        return ok(c, board, 201);
+    } catch (err) {
+        console.error('[boards:create]', err);
+        return internalError(c);
+    }
+});
