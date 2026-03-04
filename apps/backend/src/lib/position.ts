@@ -7,8 +7,8 @@ export { generateKeyBetween };
  * @param before 
  * @returns 
  */
-export function positionAtEnd(before: string | null): string {
-    return generateKeyBetween(null, before);
+export function positionAtEnd(lastPosition: string | null): string {
+    return generateKeyBetween(lastPosition, null);
 }
 
 

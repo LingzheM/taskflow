@@ -1,4 +1,25 @@
 // ============================================================
+// Error Codes — must be a const (not just a type) so it compiles to JS
+// ============================================================
+
+export type ErrorCode =
+    | 'UNAUTHORIZED'
+    | 'FORBIDDEN'
+    | 'NOT_FOUND'
+    | 'CONFLICT'
+    | 'VALIDATION_ERROR'
+    | 'INTERNAL_ERROR';
+
+export const ErrorCodes = {
+    UNAUTHORIZED:     'UNAUTHORIZED',
+    FORBIDDEN:        'FORBIDDEN',
+    NOT_FOUND:        'NOT_FOUND',
+    CONFLICT:         'CONFLICT',
+    VALIDATION_ERROR: 'VALIDATION_ERROR',
+    INTERNAL_ERROR:   'INTERNAL_ERROR',
+} as const satisfies Record<ErrorCode, ErrorCode>;
+
+// ============================================================
 // Domain Entities
 // ============================================================
 
@@ -29,14 +50,14 @@ export interface BoardMember {
     joinedAt: Date;
 }
 
-export type MemberRole = 'owner' | ' member';
+// Fixed: was 'owner' | ' member' (space typo before member)
+export type MemberRole = 'owner' | 'member';
 
 export interface Column {
     id: string;
     boardId: string;
-    title: string;
-    description?: string | null;
-    position: string;
+    name: string;     // Fixed: was 'title', matches Prisma schema
+    position: string; // Removed: 'description' doesn't exist in DB
     createdAt: Date;
     updatedAt: Date;
 }
@@ -73,7 +94,7 @@ export type ActivityAction =
     | 'COLUMN_CREATED'
     | 'COLUMN_UPDATED'
     | 'COLUMN_DELETED'
-    | 'COLUMN_MOVED'
+    | 'COLUMN_REORDERED'  // Fixed: was 'COLUMN_MOVED', matches Prisma enum
     | 'BOARD_CREATED'
     | 'MEMBER_INVITED';
 
