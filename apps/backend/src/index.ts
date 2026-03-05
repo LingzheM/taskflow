@@ -4,6 +4,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { authRouter } from './routes/auth.js';
 import { boardRouter } from './routes/boards.js';
+import { cardRouter } from './routes/cards.js';
+import { columnRouter } from './routes/columns.js';
 
 const app = new Hono();
 
@@ -24,7 +26,9 @@ app.use(
 app.get('/health', (c) => c.json({ success: true, status: 'ok' }));
 
 app.route('/api/auth', authRouter);
-app.route('/api/boards', boardRouter);
+app.route('/api', boardRouter);
+app.route('/api', columnRouter);
+app.route('/api', cardRouter);
 
 // 404 fallback
 app.notFound((c) => {
