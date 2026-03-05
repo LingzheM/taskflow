@@ -26,7 +26,7 @@ app.use(
 app.get('/health', (c) => c.json({ success: true, status: 'ok' }));
 
 app.route('/api/auth', authRouter);
-app.route('/api', boardRouter);
+app.route('/api/boards', boardRouter);
 app.route('/api', columnRouter);
 app.route('/api', cardRouter);
 
