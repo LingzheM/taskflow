@@ -8,7 +8,7 @@ import { useBoardStore } from '../store/board';
 import { useAuthStore } from '../store/auth';
 import { Navbar } from '../components/ui/Navbar';
 import { Button, Spinner } from '../components/ui';
-import { ColumnPanel } from '../components/board/ColumnPanel';
+import { BoardDndContext } from '../components/board/BoardDndContext';
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -103,9 +103,7 @@ export function BoardPage() {
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex items-start gap-3 p-4 h-full min-w-max">
-          {board.columns.map((column) => (
-            <ColumnPanel key={column.id} column={column} boardId={board.id} />
-          ))}
+          <BoardDndContext boardId={board.id} columns={board.columns} />
 
           {addingColumn ? (
             <form onSubmit={handleAddColumn}

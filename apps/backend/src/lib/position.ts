@@ -39,3 +39,39 @@ export function positionBetween(a: string | null, b: string | null): string {
 export function generateInitialPositions(count: number): string[] {
     return generateNKeysBetween(null, null, count);
 }
+
+
+/**
+ * Given an ordered list of items and a target index,
+ * compute the fractional position string to insert at that index.
+ * @param items 
+ * @param index 
+ * @returns 
+ */
+export function getPositionBetween(
+    items: { postition: string }[],
+    index: number,
+): string {
+    const before = index > 0 ? items[index -1].postition : null;
+    const after = index < items.length ? items[index].postition : null;
+    return generateKeyBetween(before, after);
+}
+
+
+/**
+ * Given an array and a move operation (from -> to index),
+ * compute the new position for the moved item without mutating the array.
+ * @param items 
+ * @param activeId 
+ * @param overIndex 
+ * @returns 
+ */
+export function computeMovePosition(
+    items: { id: string; position: string }[],
+    activeId: string,
+    overIndex: number,
+): string {
+    // Remove the active item to get the "rest" array
+    const rest = items.filter((i) => i.id !== activeId);
+    return getPositionBetween(rest, overIndex);
+}

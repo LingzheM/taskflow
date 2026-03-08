@@ -119,6 +119,30 @@ cardRouter.patch('/cards/:id', async (c) => {
     }
 });
 
+// DELETE /api/cards/:id
+cardRouter.delete('/cards/:id', async (c) => {
+    const userId = c.get('userId');
+    const cardId = c.req.param('id');
+
+    try {
+        const card = await getCardForUser(cardId, userId);
+        if (!card) return notFound(c, 'Card not found');
+
+        await prisma.card.delete({ where: { id: cardId } });
+
+        await logActivity(card.column.board.id, userId, 'CARD_DELETED', {
+            cardId,
+            cardTitle: card.title,
+            columnId: card.columnId,
+        });
+
+        return ok(c, { deleted: true });
+    } catch (err) {
+        console.error('[cards:delete]', err);
+        return internalError(c);
+    }
+});
+
 // PATCH /api/cards/:id/move
 cardRouter.patch('/cards/:id/move', async (c) => {
     const userId = c.get('userId');

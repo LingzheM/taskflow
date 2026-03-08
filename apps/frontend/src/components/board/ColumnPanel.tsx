@@ -5,8 +5,9 @@ import clsx from 'clsx';
 import type { ColumnWithCards } from '@taskflow/shared';
 import { columnsApi, cardsApi } from '../../api/cards';
 import { useBoardStore } from '../../store/board';
-import { Button, Input, Modal } from '../ui';
-import { CardItem } from './CardItem';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Button, Modal } from '../ui';
+import { SortableCard } from './SortableCard';
 
 interface ColumnPanelProps {
   column: ColumnWithCards;
@@ -168,9 +169,14 @@ export function ColumnPanel({ column, boardId, dragHandleProps, isDragging }: Co
 
         {/* Cards list */}
         <div className="flex-1 overflow-y-auto px-3 pb-2 space-y-2 scrollbar-thin">
-          {column.cards.map((card) => (
-            <CardItem key={card.id} card={card} />
-          ))}
+          <SortableContext
+            items={column.cards.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {column.cards.map((card) => (
+              <SortableCard key={card.id} card={card} />
+            ))}
+          </SortableContext>
 
           {column.cards.length === 0 && !addingCard && (
             <div className="py-6 text-center text-xs text-ink-muted">
