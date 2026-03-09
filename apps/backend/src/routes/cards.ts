@@ -6,6 +6,7 @@ import { ok, notFound, validationError, internalError } from "../lib/response.js
 import { getColumnForUser, getCardForUser } from "../lib/access.js";
 import { positionAtEnd } from "../lib/position.js";
 import { logActivity } from "../lib/activity.js";
+import { io } from '../lib/socket.js';
 
 export const cardRouter = new Hono();
 
@@ -72,6 +73,7 @@ cardRouter.post('/columns/:columnId/cards', async (c) => {
             columnName: column.name,
         });
 
+        broadcast(c, `board:${column.board.id}`, 'card:created', card);
         return ok(c, card, 201);
     } catch (err) {
         console.error('[cards:create]', err);
@@ -190,3 +192,9 @@ cardRouter.patch('/cards/:id/move', async (c) => {
         return internalError(c);
     }
 });
+
+function broadcast(c: Context, room: string, event: string, payload: unknown) {
+    const socketId = c.req.header('X-Socket-Id');
+    const emitter = socketId ? io.to(room).except(socketId) : io.to(room);
+    emitter.emit(event, payload);
+}

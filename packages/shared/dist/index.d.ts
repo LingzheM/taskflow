@@ -85,4 +85,100 @@ export interface AuthResponse {
     token: string;
     user: User;
 }
+export interface CreateBoardRequest {
+    name: string;
+}
+export interface InviteMemeberRequest {
+    email: string;
+}
+export interface CreateColumnRequest {
+    name: string;
+}
+export interface UpdateColumnRequest {
+    name?: string;
+}
+export interface ReorderColumnsRequest {
+    columns: Array<{
+        id: string;
+        position: string;
+    }>;
+}
+export interface CreateCardRequest {
+    title: string;
+    description?: string;
+}
+export interface UpdateCardRequest {
+    title?: string;
+    description?: string;
+}
+export interface MoveCardRequest {
+    columnId: string;
+    position: string;
+}
+export type WSClientEvent = {
+    type: 'join_board';
+    payload: {
+        boardId: string;
+    };
+} | {
+    type: 'leave_board';
+    payload: {
+        boardId: string;
+    };
+};
+export type WSServerEvent = {
+    type: 'card:created';
+    payload: Card;
+} | {
+    type: 'card:updated';
+    payload: Card;
+} | {
+    type: 'card:deleted';
+    payload: {
+        cardId: string;
+        columnId: string;
+    };
+} | {
+    type: 'card:moved';
+    payload: {
+        card: Card;
+        fromColumnId: string;
+        toColumnId: string;
+    };
+} | {
+    type: 'column:created';
+    payload: Column;
+} | {
+    type: 'column:updated';
+    payload: Column;
+} | {
+    type: 'column:deleted';
+    payload: {
+        columnId: string;
+        boardId: string;
+    };
+} | {
+    type: 'column:reordered';
+    payload: {
+        columns: Column[];
+    };
+} | {
+    type: 'member:invited';
+    payload: {
+        member: BoardMember;
+    };
+} | {
+    type: 'activity:logged';
+    payload: ActivityLog;
+};
+export type ExtractWSPlayload<T extends WSServerEvent['type'], E extends WSServerEvent = WSServerEvent> = E extends {
+    type: T;
+    payload: infer P;
+} ? P : never;
+export interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
 //# sourceMappingURL=index.d.ts.map

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -43,6 +43,14 @@ export function BoardDndContext({ boardId, columns }: BoardDndContextProps) {
 
   // Snapshot for rollback on error
   const [snapshot, setSnapshot] = useState<ColumnWithCards[] | null>(null);
+
+  // Tracks the cross-column move applied optimistically in onDragOver,
+  // so handleDragEnd can persist it without re-deriving from (possibly stale) columns.
+  const pendingMoveRef = useRef<{
+    cardId: string;
+    columnId: string;
+    position: string;
+  } | null>(null);
 
   // ── Sensors ───────────────────────────────────────────────
   // PointerSensor with a small activation distance avoids
@@ -90,8 +98,8 @@ export function BoardDndContext({ boardId, columns }: BoardDndContextProps) {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      // Save snapshot for potential rollback
       setSnapshot(columns.map((c) => ({ ...c, cards: [...c.cards] })));
+      pendingMoveRef.current = null;
 
       const { data } = event.active;
       if (data.current?.type === 'Card') {
@@ -141,6 +149,9 @@ export function BoardDndContext({ boardId, columns }: BoardDndContextProps) {
         targetColumn.cards.length,
       );
 
+      // Record for handleDragEnd (columns closure may be stale by then)
+      pendingMoveRef.current = { cardId: activeCard.id, columnId: targetColumnId, position: newPosition };
+
       // Optimistic update
       moveCard(activeCard.id, targetColumnId, newPosition);
     },
@@ -179,63 +190,54 @@ export function BoardDndContext({ boardId, columns }: BoardDndContextProps) {
         return;
       }
 
-      // ── Card reorder (same column) ─────────────────────
+      // ── Card drag ──────────────────────────────────────
       if (activeType === 'Card') {
         const activeCard: Card = active.data.current?.card;
-        const overCard: Card | undefined = over.data.current?.card;
 
-        // Find which column the card is currently in (after dragOver moves)
+        // ── Cross-column move (applied optimistically in onDragOver) ──────
+        // pendingMoveRef holds the move so we don't rely on the columns
+        // closure, which may be stale or already updated by React re-render.
+        if (pendingMoveRef.current?.cardId === activeCard.id) {
+          const { columnId: toColumnId, position: approxPosition } = pendingMoveRef.current;
+          pendingMoveRef.current = null;
+
+          // If the user dropped on a specific card in the target column,
+          // refine the position so the card lands exactly where they dropped it.
+          const overCard: Card | undefined = over.data.current?.card;
+          const overType = over.data.current?.type;
+          if (overType === 'Card' && overCard?.columnId === toColumnId) {
+            const targetCol = columns.find((c) => c.id === toColumnId);
+            if (targetCol) {
+              const newIndex = targetCol.cards.findIndex((k) => k.id === overCard.id);
+              if (newIndex !== -1) {
+                const refinedPos = computeMovePosition(targetCol.cards, activeCard.id, newIndex);
+                moveCard(activeCard.id, toColumnId, refinedPos);
+                moveCardMutation.mutate({ cardId: activeCard.id, columnId: toColumnId, position: refinedPos });
+                return;
+              }
+            }
+          }
+
+          // Dropped on column background or imprecise target — use position
+          // computed in onDragOver (end of target column).
+          moveCardMutation.mutate({ cardId: activeCard.id, columnId: toColumnId, position: approxPosition });
+          return;
+        }
+
+        // ── Same-column reorder ───────────────────────────────────────────
         const currentColumn = columns.find((c) =>
           c.cards.some((k) => k.id === activeCard.id),
         );
         if (!currentColumn) return;
 
-        const overType = over.data.current?.type;
-
-        // Target column for this drop
-        const targetColumnId =
-          overType === 'Column'
-            ? (over.id as string)
-            : overCard?.columnId ?? currentColumn.id;
-
-        if (currentColumn.id !== targetColumnId) {
-          // Cross-column move was already handled optimistically in onDragOver.
-          // Just persist it.
-          const updatedCard = currentColumn.cards.find(
-            (k) => k.id === activeCard.id,
-          );
-          if (!updatedCard) return;
-
-          moveCardMutation.mutate({
-            cardId: activeCard.id,
-            columnId: updatedCard.columnId,
-            position: updatedCard.position,
-          });
-          return;
-        }
-
-        // Same-column reorder
         const oldIndex = currentColumn.cards.findIndex((k) => k.id === active.id);
         const newIndex = currentColumn.cards.findIndex((k) => k.id === over.id);
-        if (oldIndex === newIndex) return;
+        // newIndex === -1 means over is the column element, not a card — ignore
+        if (oldIndex === newIndex || newIndex === -1) return;
 
-        // Compute new position
-        const reordered = arrayMove(currentColumn.cards, oldIndex, newIndex);
-        const newPosition = computeMovePosition(
-          currentColumn.cards,
-          activeCard.id,
-          newIndex,
-        );
-
-        // Optimistic update
+        const newPosition = computeMovePosition(currentColumn.cards, activeCard.id, newIndex);
         moveCard(activeCard.id, currentColumn.id, newPosition);
-
-        // Persist
-        moveCardMutation.mutate({
-          cardId: activeCard.id,
-          columnId: currentColumn.id,
-          position: newPosition,
-        });
+        moveCardMutation.mutate({ cardId: activeCard.id, columnId: currentColumn.id, position: newPosition });
       }
     },
     [columns, moveCard, setColumns, moveCardMutation, reorderColumnsMutation],

@@ -1,3 +1,4 @@
+import { createServer } from 'http';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -6,6 +7,7 @@ import { authRouter } from './routes/auth.js';
 import { boardRouter } from './routes/boards.js';
 import { cardRouter } from './routes/cards.js';
 import { columnRouter } from './routes/columns.js';
+import { initSocketIO } from './lib/socket.js';
 
 const app = new Hono();
 
@@ -48,9 +50,14 @@ app.onError((err, c) => {
 
 const PORT = Number(process.env.PORT) || 4000;
 
-serve({ fetch: app.fetch, port: PORT }, () => {
-    console.log(`🚀 TaskFlow backend running on http://localhost:${PORT}`);
-    console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-});
+const server = serve(
+    { fetch: app.fetch, port: PORT },
+    () => {
+        console.log(`🚀 TaskFlow backend running on http://localhost:${PORT}`);
+        console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+    },
+);
+
+initSocketIO(server as unknown as import('node:http').Server);
 
 export default app;

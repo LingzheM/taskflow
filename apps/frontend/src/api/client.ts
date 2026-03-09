@@ -3,7 +3,7 @@ import type { ApiResponse } from '@taskflow/shared';
 
 export const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000',
-    headers: { 'Content-Type': 'applicaiton/json' },
+    headers: { 'Content-Type': 'application/json' },
     timeout: 10_000,
 });
 
