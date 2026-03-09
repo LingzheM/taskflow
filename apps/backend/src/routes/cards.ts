@@ -6,7 +6,7 @@ import { ok, notFound, validationError, internalError } from "../lib/response.js
 import { getColumnForUser, getCardForUser } from "../lib/access.js";
 import { positionAtEnd } from "../lib/position.js";
 import { logActivity } from "../lib/activity.js";
-import { io } from '../lib/socket.js';
+import { broadcastToBoard } from '../lib/socket.js';
 
 export const cardRouter = new Hono();
 
@@ -73,7 +73,7 @@ cardRouter.post('/columns/:columnId/cards', async (c) => {
             columnName: column.name,
         });
 
-        broadcast(c, `board:${column.board.id}`, 'card:created', card);
+        broadcastToBoard(column.board.id, { type: 'card:created', payload: card }, c.req.header('X-Socket-Id'));
         return ok(c, card, 201);
     } catch (err) {
         console.error('[cards:create]', err);
@@ -114,6 +114,7 @@ cardRouter.patch('/cards/:id', async (c) => {
             changes: result.data,
         });
 
+        broadcastToBoard(card.column.board.id, { type: 'card:updated', payload: updated }, c.req.header('X-Socket-Id'));
         return ok(c, updated);
     } catch (err) {
         console.error('[cards:update]', err);
@@ -138,6 +139,7 @@ cardRouter.delete('/cards/:id', async (c) => {
             columnId: card.columnId,
         });
 
+        broadcastToBoard(card.column.board.id, { type: 'card:deleted', payload: { cardId, columnId: card.columnId } }, c.req.header('X-Socket-Id'));
         return ok(c, { deleted: true });
     } catch (err) {
         console.error('[cards:delete]', err);
@@ -186,15 +188,10 @@ cardRouter.patch('/cards/:id/move', async (c) => {
             toColumnName: targetColumn.name,
         });
 
+        broadcastToBoard(boardId, { type: 'card:moved', payload: { card: updated, fromColumnId, toColumnId: targetColumnId } }, c.req.header('X-Socket-Id'));
         return ok(c, updated);
     } catch (err) {
         console.error('[cards:move]', err);
         return internalError(c);
     }
 });
-
-function broadcast(c: Context, room: string, event: string, payload: unknown) {
-    const socketId = c.req.header('X-Socket-Id');
-    const emitter = socketId ? io.to(room).except(socketId) : io.to(room);
-    emitter.emit(event, payload);
-}

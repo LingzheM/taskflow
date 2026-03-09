@@ -9,11 +9,13 @@ import { useAuthStore } from '../store/auth';
 import { Navbar } from '../components/ui/Navbar';
 import { Button, Spinner } from '../components/ui';
 import { BoardDndContext } from '../components/board/BoardDndContext';
+import { useBoardSocket } from '../hooks/useBoardSocket';
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  useBoardSocket(boardId ?? '');
   const { board, setBoard, clearBoard, addColumn } = useBoardStore();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [addingColumn, setAddingColumn] = useState(false);

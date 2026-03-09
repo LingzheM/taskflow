@@ -1,8 +1,7 @@
 import { Server, type Socket } from 'socket.io';
 import type { IncomingMessage, ServerResponse, Server as HttpServer } from 'http';
-import { verifyToken } from './jwt';
-import type { WSServerEvent } from '@taskflow/shared'
-import { string } from 'zod';
+import { verifyToken } from './jwt.js';
+import type { WSServerEvent } from '@taskflow/shared';
 
 let _io: Server | null = null;
 

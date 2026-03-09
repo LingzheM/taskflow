@@ -1,5 +1,6 @@
 import {create} from 'zustand';
 import type { User } from '@taskflow/shared';
+import { connectSocket, disconnectSocket } from '../lib/socket';
 
 interface AuthState {
     token: string | null;
@@ -26,19 +27,25 @@ function loadInitialState(): Pick<AuthState, 'token' | 'user' | 'isAuthenticated
     return { token: null, user: null, isAuthenticated: false };
 }
 
+const initialState = loadInitialState();
+// Reconnect socket if a valid token is already in localStorage (page refresh)
+if (initialState.token) connectSocket(initialState.token);
+
 export const useAuthStore = create<AuthState>()((set) => ({
-    ...loadInitialState(),
+    ...initialState,
 
     setAuth: (token, user) => {
         localStorage.setItem(TOKEN_KEY, token);
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         set({token, user, isAuthenticated: true});
+        connectSocket(token);
     },
 
     clearAuth: () => {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         set({ token: null, user: null, isAuthenticated: false });
+        disconnectSocket();
     },
 }));
 

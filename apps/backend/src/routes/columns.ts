@@ -6,6 +6,7 @@ import { ok, forbidden, notFound, validationError, internalError } from '../lib/
 import { getBoardForUser, getColumnForUser } from '../lib/access.js';
 import { positionAtEnd } from '../lib/position.js';
 import { logActivity } from '../lib/activity.js';
+import { broadcastToBoard } from '../lib/socket.js';
 
 export const columnRouter = new Hono();
 
@@ -65,6 +66,7 @@ columnRouter.post('/boards/:boardId/columns', async (c) => {
 
     await logActivity(boardId, userId, 'COLUMN_CREATED', { columnName: result.data.name });
 
+    broadcastToBoard(boardId, { type: 'column:created', payload: column }, c.req.header('X-Socket-Id'));
     return ok(c, column, 201);
   } catch (err) {
     console.error('[columns:create]', err);
@@ -102,6 +104,7 @@ columnRouter.patch('/columns/:id', async (c) => {
       newName: result.data.name,
     });
 
+    broadcastToBoard(column.board.id, { type: 'column:updated', payload: updated }, c.req.header('X-Socket-Id'));
     return ok(c, updated);
   } catch (err) {
     console.error('[columns:update]', err);
@@ -127,6 +130,7 @@ columnRouter.delete('/columns/:id', async (c) => {
       columnName: column.name,
     });
 
+    broadcastToBoard(column.board.id, { type: 'column:deleted', payload: { columnId, boardId: column.board.id } }, c.req.header('X-Socket-Id'));
     return ok(c, { deleted: true });
   } catch (err) {
     console.error('[columns:delete]', err);
@@ -166,6 +170,7 @@ columnRouter.patch('/boards/:boardId/columns/reorder', async (c) => {
       columnIds: result.data.columns.map((c) => c.id),
     });
 
+    broadcastToBoard(boardId, { type: 'column:reordered', payload: { columns } }, c.req.header('X-Socket-Id'));
     return ok(c, columns);
   } catch (err) {
     console.error('[columns:reorder]', err);
